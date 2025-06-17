@@ -39,6 +39,18 @@ x|>
       idade >= 75 & idade <= 79 ~ '75-79',
       idade >= 80 ~ '80+'
     ),
+    faixa_etaria_dez = dplyr::case_when(
+        idade >= 0   & idade <= 9   ~ '0-9',
+        idade >= 10  & idade <= 19  ~ '10-19',
+        idade >= 20  & idade <= 29  ~ '20-29',
+        idade >= 30  & idade <= 39  ~ '30-39',
+        idade >= 40  & idade <= 49  ~ '40-49',
+        idade >= 50  & idade <= 59  ~ '50-59',
+        idade >= 60  & idade <= 69  ~ '60-69',
+        idade >= 70  & idade <= 79  ~ '70-79',
+        idade >= 80               ~ '80+',
+        TRUE                      ~ NA_character_
+    ),
     raca_cor = dplyr::case_when(
       raca_cor == 1 ~ 'Branca',
       raca_cor == 2 ~ 'Preta',
@@ -93,8 +105,24 @@ x|>
       sigla_uf_internacao %in% c("ES", "MG", "RJ", "SP") ~ "Sudeste",
       sigla_uf_internacao %in% c("PR", "RS", "SC") ~ "Sul",
       TRUE ~ NA_character_  
-    ) 
-  ) -> x
+    ),
+    evolucao_caso = dplyr::case_when(
+      evolucao_caso == 1 ~ 'Cura',
+      evolucao_caso == 2 ~ 'Óbito',
+      evolucao_caso == 3 ~ 'Óbito por outras causas',
+      TRUE ~ NA_character_  
+    ),
+    faixa_etaria_dez = factor(
+      faixa_etaria_dez,
+      levels = c("0-9", "10-19", "20-29", "30-39", "40-49", 
+                 "50-59", "60-69", "70-79", "80+")
+    ),
+    faixa_etaria = factor(
+      faixa_etaria, 
+      levels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", 
+                 "30-34", "35-39", "40-44", "45-49", "50-54", 
+                 "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
+    )) -> x
 
 #Criação de Variáveis de tempo
 x |>
@@ -106,20 +134,12 @@ x |>
                                       units = 'days')),
                 sexo = dplyr::recode(sexo, "F" = "Feminino", "M" = "Masculino")) -> x
 
-#Atribui Faixa etária como Factor
-x|>
-  dplyr::mutate(
-    faixa_etaria = factor(
-      faixa_etaria, 
-      levels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", 
-                 "30-34", "35-39", "40-44", "45-49", "50-54", 
-                 "55-59", "60-64", "65-69", "70-74", "75-79", "80+")
-  )) -> x
-
 #Cria Variável de Status para usar no Kaplan-Meier
 x|>
   dplyr::mutate(status = 
                   dplyr::case_when(evolucao_caso == 2 ~ 1,
-                                   evolucao_caso == 1 ~ 0 )) -> x
+                                   evolucao_caso == 1 ~ 0,
+                                   TRUE ~ NA_real_)) -> x
 
 #Fim da ETL
+
